@@ -7,23 +7,26 @@ OUTPUT_FOLDER = 'outputs'
 RANGE_MIN = 2
 RANGE_MAX = 16
 
-def quantize_image(image, levels):
-    # 256 = Number of bits in a pixel
-    quantization_interval = 256 // levels
+def sample_image(image, interval):
+    height, width, _ = image.shape
 
-    print(f'Quantization interval: {quantization_interval}')
-    print(f'{(image[0][0])}')
-    print(f'{(image[0][0] // quantization_interval) * quantization_interval}')
+    new_height = height // interval
+    new_width = width // interval
 
-    quantized_image = (image // quantization_interval) * quantization_interval
+    sampled_image = np.zeros((new_height, new_width, 3), dtype=np.uint8)
 
-    return quantized_image
+    for i in range(new_height):
+        for j in range(new_width):
+            sampled_image[i, j] = image[i * interval, j * interval]
+
+    return sampled_image
+
 
 if __name__ == '__main__':
     input_image = cv.imread(INPUT_IMAGE)
 
     for i in range(RANGE_MIN, RANGE_MAX + 1):
-        quantized_image = quantize_image(input_image, i)
+        sampled_image = sample_image(input_image, i)
 
-        output_filename = f'{OUTPUT_FOLDER}/quantized_akari_{i}.png'
-        cv.imwrite(output_filename, quantized_image)
+        output_filename = f'{OUTPUT_FOLDER}/sampled_image_{i}.png'
+        cv.imwrite(output_filename, sampled_image)
