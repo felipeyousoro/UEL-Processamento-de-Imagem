@@ -23,8 +23,6 @@ if __name__ == '__main__':
 
     for i in range(RANGE_MIN, RANGE_MAX + 1):
         quantized_image = quantize_image(input_image, i)
-        print(f'Quantized image with {i} bits')
-        print(quantized_image)
 
         output_filename = f'{OUTPUT_FOLDER}/quantized_image_{i}.png'
         cv.imwrite(output_filename, quantized_image)

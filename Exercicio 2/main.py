@@ -11,7 +11,7 @@ RANGE_MAX = 16
 
 
 def sample_image(image, interval):
-    height, width = image.shape
+    height, width, _ = image.shape
 
     new_height = height // interval
     new_width = width // interval
@@ -26,7 +26,7 @@ def sample_image(image, interval):
 
 
 if __name__ == '__main__':
-    input_image = cv.imread(INPUT_IMAGE, cv.IMREAD_GRAYSCALE)
+    input_image = cv.imread(INPUT_IMAGE)
 
     for i in range(RANGE_MIN, RANGE_MAX + 1):
         sampled_image = sample_image(input_image, i)
