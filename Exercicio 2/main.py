@@ -4,11 +4,14 @@ import cv2 as cv
 # PATHING DAS IMAGES
 INPUT_IMAGE = 'akari.png'
 OUTPUT_FOLDER = 'outputs'
+
+# INTERVALO DE AMOSTRAGEM
 RANGE_MIN = 2
 RANGE_MAX = 16
 
+
 def sample_image(image, interval):
-    height, width, _ = image.shape
+    height, width = image.shape
 
     new_height = height // interval
     new_width = width // interval
@@ -23,7 +26,7 @@ def sample_image(image, interval):
 
 
 if __name__ == '__main__':
-    input_image = cv.imread(INPUT_IMAGE)
+    input_image = cv.imread(INPUT_IMAGE, cv.IMREAD_GRAYSCALE)
 
     for i in range(RANGE_MIN, RANGE_MAX + 1):
         sampled_image = sample_image(input_image, i)
