@@ -1,10 +1,13 @@
 import cv2 as cv
 import numpy as np
+import sys
 from colors import Colors
 
 # PATHING DAS IMAGES
 INPUT_IMAGE = 'akari.png'
 OUTPUT_FOLDER = 'outputs'
+
+sys.setrecursionlimit(10 ** 6)
 
 
 def get_neighbors(image, x, y):
