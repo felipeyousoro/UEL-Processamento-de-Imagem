@@ -3,7 +3,7 @@ import cv2 as cv
 import numpy as np
 
 # PATHING DAS IMAGES
-INPUT_IMAGE = 'rozemyne.png'
+INPUT_IMAGE = 'rozenoise.png'
 OUTPUT_FOLDER = 'outputs'
 
 MEAN_PIXELS = 3
@@ -115,18 +115,20 @@ if __name__ == '__main__':
     # image has color
     input_image = cv.imread(INPUT_IMAGE, cv.IMREAD_COLOR)
 
-    # mean_image = mean_filter(input_image)
-    # cv.imwrite(f'{OUTPUT_FOLDER}/mean_image.png', mean_image)
-    #
-    # weighted_mean_image = weighted_mean_filter(input_image)
-    # cv.imwrite(f'{OUTPUT_FOLDER}/weighted_mean_image.png', weighted_mean_image)
+    mean_image = mean_filter(input_image)
+    cv.imwrite(f'{OUTPUT_FOLDER}/mean_image.png', mean_image)
+
+    weighted_mean_image = weighted_mean_filter(input_image)
+    cv.imwrite(f'{OUTPUT_FOLDER}/weighted_mean_image.png', weighted_mean_image)
 
     edge = sobel_filter(input_image)
     edge = np.array(edge, dtype=np.uint8)
 
     new_image = cv.add(edge, input_image)
 
-    enhanced_image = cv.addWeighted(input_image, 0.9, edge, 0.1, 0)
+    cv.imwrite(f'{OUTPUT_FOLDER}/sobel_filter.png', edge)
+
+    enhanced_image = cv.addWeighted(input_image, 0.7, edge, 0.3, 0)
 
     cv.imwrite(f'{OUTPUT_FOLDER}/sobel.png', enhanced_image)
 
