@@ -18,7 +18,6 @@ PIROCA = np.array([
 
 KERNEL = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
 
-
 def get_moore_neighborhood(img, x, y) -> list[int, int]:
     max_x, max_y = img.shape
 
@@ -34,41 +33,47 @@ def get_moore_neighborhood(img, x, y) -> list[int, int]:
     return neighborhood
 
 def erosion():
-    img = PIROCA
-    kernel = KERNEL
+    erosion_img = cv.erode(PIROCA, KERNEL, iterations=1)
 
-    erosion = cv.erode(img, kernel, iterations=1)
-
-    return erosion
+    return erosion_img
 
 
 def opening():
-    img = PIROCA
-    kernel = KERNEL
+    erosion_img = erosion()
+    opening_img = np.zeros(erosion_img.shape, dtype=np.uint8)
 
-    opening = cv.morphologyEx(img, cv.MORPH_OPEN, kernel)
+    for i in range(erosion_img.shape[0]):
+        for j in range(erosion_img.shape[1]):
+            if erosion_img[i, j] == 1:
+                neighborhood = get_moore_neighborhood(erosion_img, i, j)
 
-    return opening
+                for x, y in neighborhood:
+                    opening_img[x, y] = 1
+
+    return opening_img
 
 def dilation():
-    img = PIROCA
-    kernel = KERNEL
+    dilation_img = cv.dilate(PIROCA, KERNEL, iterations=1)
 
-    dilation = cv.dilate(img, kernel, iterations=1)
-
-    return dilation
+    return dilation_img
 
 def closing():
-    img = PIROCA
-    kernel = KERNEL
+    dilation_img = dilation()
+    closing = np.zeros(dilation_img.shape, dtype=np.uint8)
 
-    closing = cv.morphologyEx(img, cv.MORPH_CLOSE, kernel)
+    for i in range(dilation_img.shape[0]):
+        for j in range(dilation_img.shape[1]):
+            if dilation_img[i, j] == 1:
+                neighborhood = get_moore_neighborhood(dilation_img, i, j)
+
+                if all(dilation_img[x, y] == 1 for x, y in neighborhood):
+                    closing[i, j] = 1
 
     return closing
 
 
 if __name__ == '__main__':
-    original_img = PIROCA
+    original_img = PIROCA.copy()
     original_img[original_img == 1] = 255
     cv.imwrite(f'{OUTPUT_FOLDER}/original.png', original_img)
 
