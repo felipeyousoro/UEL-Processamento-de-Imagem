@@ -2,102 +2,11 @@ import math as m
 import cv2 as cv
 import numpy as np
 
-# PATHING DAS IMAGES
+import watanimage
+
+# PATHING DAS IMAGENS
+INPUT_IMAGE = 'akari.png'
 OUTPUT_FOLDER = 'outputs'
-
-PIROCA = np.array([
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-    [1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    [1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-    [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-    [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype=np.uint8)
-
-KERNEL = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
-
-
-def get_moore_neighborhood(img, x, y) -> list[int, int]:
-    max_x, max_y = img.shape
-
-    neighborhood = []
-
-    for i in range(-1, 2):
-        for j in range(-1, 2):
-            if (i == 0 and j == 0) or (x + i < 0 or x + i >= max_x) or (y + j < 0 or y + j >= max_y):
-                continue
-
-            neighborhood.append((x + i, y + j))
-
-    return neighborhood
-
-
-def get_von_neumann_neighborhood(img, x, y) -> list[int, int]:
-    max_x, max_y = img.shape
-
-    neighborhood = []
-
-    for i in range(-1, 2):
-        for j in range(-1, 2):
-            if (i == 0 and j == 0) or (i != 0 and j != 0) or (x + i < 0 or x + i >= max_x) or (
-                    y + j < 0 or y + j >= max_y):
-                continue
-
-            neighborhood.append((x + i, y + j))
-
-    return neighborhood
-
-
-def erosion():
-    erosion_img = cv.erode(PIROCA, KERNEL, iterations=1)
-
-    return erosion_img
-
-
-def opening():
-    erosion_img = erosion()
-    opening_img = np.zeros(erosion_img.shape, dtype=np.uint8)
-
-    for i in range(erosion_img.shape[0]):
-        for j in range(erosion_img.shape[1]):
-            if erosion_img[i, j] == 1:
-                neighborhood = get_moore_neighborhood(erosion_img, i, j)
-
-                for x, y in neighborhood:
-                    opening_img[x, y] = 1
-
-    return opening_img
-
-
-def dilation():
-    dilation_img = cv.dilate(PIROCA, KERNEL, iterations=1)
-
-    return dilation_img
-
-
-def closing():
-    dilation_img = dilation()
-    closing = np.zeros(dilation_img.shape, dtype=np.uint8)
-
-    for i in range(dilation_img.shape[0]):
-        for j in range(dilation_img.shape[1]):
-            if dilation_img[i, j] == 1:
-                neighborhood = get_moore_neighborhood(dilation_img, i, j)
-
-                if all(dilation_img[x, y] == 1 for x, y in neighborhood):
-                    closing[i, j] = 1
-
-    return closing
-
-
-def extract_frontier():
-    erosion_img = erosion()
-
-    frontier = PIROCA.copy()
-
-    return frontier - erosion_img
 
 
 def hole_filler():
@@ -145,34 +54,35 @@ def fill_holes():
 
 
 if __name__ == '__main__':
-    original_img = PIROCA.copy()
-    original_img[original_img == 1] = 255
-    cv.imwrite(f'{OUTPUT_FOLDER}/original.png', original_img)
+    img = cv.imread(INPUT_IMAGE, cv.IMREAD_GRAYSCALE)
+    img = watanimage.binarize_image(img)
 
-    erosion_img = erosion()
+    erosion_img = cv.erode(img, watanimage.MOORE_KERNEL, iterations=1)
     erosion_img[erosion_img == 1] = 255
     cv.imwrite(f'{OUTPUT_FOLDER}/erosion.png', erosion_img)
 
-    opening_img = opening()
+    opening_img = watanimage.opening(img, watanimage.MOORE_KERNEL)
     opening_img[opening_img == 1] = 255
     cv.imwrite(f'{OUTPUT_FOLDER}/opening.png', opening_img)
 
-    dilation_img = dilation()
-    dilation_img[dilation_img == 1] = 255
-    cv.imwrite(f'{OUTPUT_FOLDER}/dilation.png', dilation_img)
-
-    closing_img = closing()
+    closing_img = watanimage.closing(img, watanimage.MOORE_KERNEL)
     closing_img[closing_img == 1] = 255
     cv.imwrite(f'{OUTPUT_FOLDER}/closing.png', closing_img)
 
-    frontier_img = extract_frontier()
+    frontier_img = watanimage.extract_frontier(img)
     frontier_img[frontier_img == 1] = 255
     cv.imwrite(f'{OUTPUT_FOLDER}/frontier.png', frontier_img)
 
-    hole_fill_img = hole_filler()
-    hole_fill_img[hole_fill_img == 1] = 255
-    cv.imwrite(f'{OUTPUT_FOLDER}/hole.png', hole_fill_img)
+    fillings = watanimage.extract_frontier(img)
+    fillings = watanimage.invert_image(fillings)
+    fillings[fillings == 1] = 255
+    cv.imwrite(f'{OUTPUT_FOLDER}/fillings.png', fillings)
 
-    filled_hole_img = fill_holes()
-    filled_hole_img[filled_hole_img == 1] = 255
-    cv.imwrite(f'{OUTPUT_FOLDER}/filled_hole.png', filled_hole_img)
+    filled_img = watanimage.fill_holes(frontier_img, fillings, 64, 164)
+    filled_img[filled_img == 1] = 255
+    cv.imwrite(f'{OUTPUT_FOLDER}/filled_image.png', filled_img)
+
+    c_comp_img = watanimage.get_connected_components(img, watanimage.MOORE_KERNEL, 64, 164)
+    c_comp_img[c_comp_img == 1] = 255
+    cv.imwrite(f'{OUTPUT_FOLDER}/connected_components.png', c_comp_img)
+
