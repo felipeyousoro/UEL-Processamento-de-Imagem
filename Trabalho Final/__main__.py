@@ -1,6 +1,8 @@
 import math as m
 import cv2 as cv
 import numpy as np
+import pytesseract as pytesseract
+
 import watanimage
 
 # PATHING DAS IMAGES
@@ -13,39 +15,38 @@ def save_images(imgs, name):
         cv.imwrite(OUTPUT_FOLDER + '/' + name + str(i + 1) + '.png', imgs[i])
 
 
-def mark_components(colored_image: np.ndarray, components: list) -> np.ndarray:
+import cv2
+import numpy as np
+
+import cv2
+import numpy as np
+
+import cv2
+import numpy as np
+
+import cv2
+import numpy as np
+
+
+def rectangular_contours_to_image(binarized_img: np.ndarray, contour: np.ndarray, height: int,
+                                  width: int) -> np.ndarray:
+    image = np.zeros((height, width), dtype=np.uint8)
+
+    cv2.drawContours(image, [contour], -1, 1, thickness=cv2.FILLED)
+
+    x, y, w, h = cv2.boundingRect(contour)
+
+    cropped_image = image[y:y + h, x:x + w]
+
+    result_image = np.where(cropped_image == 1, binarized_img[y:y + h, x:x + w], 0)
+
+    return result_image
+
+
+def mark_rectangular_contours(colored_image: np.ndarray, binarized_image: np.ndarray, countours) -> np.ndarray:
     marked_image = colored_image.copy()
-
-    for component_coordinates in components:
-        for pixel_coordinates in component_coordinates:
-            y, x = pixel_coordinates
-            marked_image[y, x] = (0, 255, 0)  # You can adjust the color
-
-    cv.imshow('Marked Components', marked_image)
-    cv.waitKey(0)
-    cv.destroyAllWindows()
-
-    return marked_image
-
-
-def mark_rectangular_contours(colored_image: np.ndarray, binarized_image: np.ndarray) -> np.ndarray:
-    marked_image = colored_image.copy()
-
-    contours, hierarchy = cv.findContours(binarized_image, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-
-    # remove contours with approximated area less than 6 and greater than 4
-    selected_contours = []
 
     for contour in contours:
-        peri = cv.arcLength(contour, True)
-        approx = cv.approxPolyDP(contour, 0.02 * peri, True)
-
-        if 4 <= len(approx) <= 8:
-            selected_contours.append(contour)
-
-    selected_contours = sorted(selected_contours, key=cv.contourArea, reverse=True)[:5]
-
-    for contour in selected_contours:
         x, y, w, h = cv.boundingRect(contour)
         cv.rectangle(marked_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
@@ -53,45 +54,67 @@ def mark_rectangular_contours(colored_image: np.ndarray, binarized_image: np.nda
 
 
 if __name__ == '__main__':
-    final_images = []
-    opening_images = []
-    sobel_images = []
-    binarized_images = []
-    fourier_images = []
-    bilateral_images = []
-    equalized_images = []
-    prewitt_images = []
-    gaussian_images = []
-    edge_images = []
+    NO_IMAGES = 13
 
-    for i in range(1, 13):
+    for i in range(1, NO_IMAGES):
+        images = []
+        print(i)
         color_image = cv.imread(INPUT_FOLDER + '/img (' + str(i) + ').png')
         gray_image = cv.imread(INPUT_FOLDER + '/img (' + str(i) + ').png', cv.IMREAD_GRAYSCALE)
 
+        # Aplica o pré-processamento
         gaussian = watanimage.gaussian_blur(gray_image)
-        gaussian_images.append(gaussian)
-
         edge = watanimage.sobel_filter(gaussian)
-        edge_images.append(edge)
-
         sobel = cv.addWeighted(gaussian, 0.5, edge, 0.5, 50)
-        sobel_images.append(sobel)
-
         binarized_img = watanimage.binarize_image(sobel)
-        binarized_images.append(binarized_img)
 
-        final = mark_rectangular_contours(color_image, binarized_img)
-        final_images.append(final)
+        # Busca os contornos
+        contours, hierarchy = cv.findContours(binarized_img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        selected_contours = []
+        for contour in contours:
+            peri = cv.arcLength(contour, True)
+            approx = cv.approxPolyDP(contour, 0.02 * peri, True)
 
-    for bin_img in binarized_images:
-        bin_img[bin_img == 1] = 255
+            # Utilizar len = 4 já funciona para a maioria dos casos
+            # mas algumas placas (especialamente do Mercusul)
+            # não são reconhecidas corretamente, e, na base dos testes,
+            # ter um "limite superior" de 8 vértices funciona bem
+            if 4 <= len(approx) <= 8:
+                selected_contours.append(contour)
 
-    save_images(prewitt_images, 'prewitt-')
-    save_images(gaussian_images, 'gaussian-')
-    save_images(bilateral_images, 'bilateral-')
-    save_images(opening_images, 'opening-')
-    save_images(edge_images, 'edge-')
-    save_images(sobel_images, 'sobel-')
-    save_images(binarized_images, 'binarized-')
-    save_images(final_images, 'final-')
-    save_images(equalized_images, 'equalized-')
+        # Sinceramente, isso aqui é desnescessário,
+        # mas, se não fizer, a imagem final fica com
+        # muitos contornos pequenos marcados, deixando
+        # muito poluído, e me poupa de esperar mais tempo
+        # quando for processar os textos
+        selected_contours = sorted(selected_contours, key=cv.contourArea, reverse=True)[:5]
+
+        # Marcando contornos para visualizar
+        final = mark_rectangular_contours(color_image, binarized_img, selected_contours)
+        images.append(final)
+
+        cropped_contours = []
+        for contour in selected_contours:
+            contour_img = rectangular_contours_to_image(binarized_img, contour, binarized_img.shape[0],
+                                                        binarized_img.shape[1])
+            contour_img = watanimage.opening(contour_img)
+            contour_img[contour_img == 1] = 255
+            cropped_contours.append(contour_img)
+
+        binarized_img[binarized_img == 1] = 255
+        images.append(binarized_img)
+
+        # Aplica o Tessearct para detectar o texto
+
+        pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+        for cropped_contour in cropped_contours:
+            # Motivo do PSM
+            # https://stackoverflow.com/a/44632770
+            text = pytesseract.image_to_string(cropped_contour, config='--psm 7')
+            images.append(cropped_contour)
+            # Removendo espaços e caracteres especiais
+            text = ''.join(e for e in text if e.isalnum())
+            if len(text) > 5:
+                print(text)
+
+        save_images(images, 'img (' + str(i) + ')-')
