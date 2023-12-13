@@ -37,11 +37,21 @@ def bilateral_filter(img: np.ndarray) -> np.ndarray:
     copy = img.copy()
     return cv.bilateralFilter(copy, 9, 75, 75)
 
+
 def sobel_filter(img: np.ndarray) -> np.ndarray:
     copy = img.copy()
     copy = cv.Sobel(copy, cv.CV_64F, 1, 1, ksize=3)
     copy = np.absolute(copy)
     copy = np.uint8(copy)
+    return copy
+
+
+def prewitt_filter(img: np.ndarray) -> np.ndarray:
+    copy = img.copy()
+    kernelx = np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]])
+    kernely = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
+    copy = cv.filter2D(copy, -1, kernelx)
+    copy = cv.filter2D(copy, -1, kernely)
     return copy
 
 
