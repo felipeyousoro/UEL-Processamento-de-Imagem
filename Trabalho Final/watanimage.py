@@ -46,32 +46,6 @@ def sobel_filter(img: np.ndarray) -> np.ndarray:
     return copy
 
 
-def prewitt_filter(img: np.ndarray) -> np.ndarray:
-    copy = img.copy()
-    kernelx = np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]])
-    kernely = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
-    copy = cv.filter2D(copy, -1, kernelx)
-    copy = cv.filter2D(copy, -1, kernely)
-    return copy
-
-
 def gaussian_blur(img: np.ndarray) -> np.ndarray:
     copy = img.copy()
     return cv.GaussianBlur(copy, (5, 5), 0)
-
-
-def fourier_transform(img: np.ndarray) -> np.ndarray:
-    copy = img.copy()
-    return np.fft.fft2(copy)
-
-
-def get_connected_components(img: np.ndarray) -> list:
-    num_labels, labels, stats, centroids = cv.connectedComponentsWithStats(img, connectivity=8)
-
-    components_coordinates = []
-
-    for label in range(1, num_labels):  # Start from 1 to exclude the background (label 0)
-        component_coordinates = np.column_stack(np.where(labels == label))
-        components_coordinates.append(component_coordinates)
-
-    return components_coordinates

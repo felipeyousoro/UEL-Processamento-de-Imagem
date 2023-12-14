@@ -15,26 +15,13 @@ def save_images(imgs, name):
         cv.imwrite(OUTPUT_FOLDER + '/' + name + str(i + 1) + '.png', imgs[i])
 
 
-import cv2
-import numpy as np
-
-import cv2
-import numpy as np
-
-import cv2
-import numpy as np
-
-import cv2
-import numpy as np
-
-
 def rectangular_contours_to_image(binarized_img: np.ndarray, contour: np.ndarray, height: int,
                                   width: int) -> np.ndarray:
     image = np.zeros((height, width), dtype=np.uint8)
 
-    cv2.drawContours(image, [contour], -1, 1, thickness=cv2.FILLED)
+    cv.drawContours(image, [contour], -1, 1, thickness=cv.FILLED)
 
-    x, y, w, h = cv2.boundingRect(contour)
+    x, y, w, h = cv.boundingRect(contour)
 
     cropped_image = image[y:y + h, x:x + w]
 
@@ -56,7 +43,7 @@ def mark_rectangular_contours(colored_image: np.ndarray, binarized_image: np.nda
 if __name__ == '__main__':
     NO_IMAGES = 13
 
-    for i in range(1, NO_IMAGES):
+    for i in range(1, NO_IMAGES + 1):
         images = []
         print(i)
         color_image = cv.imread(INPUT_FOLDER + '/img (' + str(i) + ').png')
@@ -65,7 +52,7 @@ if __name__ == '__main__':
         # Aplica o pré-processamento
         gaussian = watanimage.gaussian_blur(gray_image)
         edge = watanimage.sobel_filter(gaussian)
-        sobel = cv.addWeighted(gaussian, 0.5, edge, 0.5, 50)
+        sobel = cv.addWeighted(gaussian, 0.7, edge, 0.3, 20)
         binarized_img = watanimage.binarize_image(sobel)
 
         # Busca os contornos
@@ -78,15 +65,15 @@ if __name__ == '__main__':
             # Utilizar len = 4 já funciona para a maioria dos casos
             # mas algumas placas (especialamente do Mercusul)
             # não são reconhecidas corretamente, e, na base dos testes,
-            # ter um "limite superior" de 8 vértices funciona bem
-            if 4 <= len(approx) <= 8:
+            # ter um "limite superior" de 7 vértices funciona bem
+            if 4 <= len(approx) <= 7:
                 selected_contours.append(contour)
 
         # Sinceramente, isso aqui é desnescessário,
         # mas, se não fizer, a imagem final fica com
         # muitos contornos pequenos marcados, deixando
-        # muito poluído, e me poupa de esperar mais tempo
-        # quando for processar os textos
+        # muito poluído, e me poupa de esperar mais
+        # tempo quando for processar os textos
         selected_contours = sorted(selected_contours, key=cv.contourArea, reverse=True)[:5]
 
         # Marcando contornos para visualizar
@@ -97,7 +84,7 @@ if __name__ == '__main__':
         for contour in selected_contours:
             contour_img = rectangular_contours_to_image(binarized_img, contour, binarized_img.shape[0],
                                                         binarized_img.shape[1])
-            contour_img = watanimage.opening(contour_img)
+            #contour_img = watanimage.opening(contour_img)
             contour_img[contour_img == 1] = 255
             cropped_contours.append(contour_img)
 
