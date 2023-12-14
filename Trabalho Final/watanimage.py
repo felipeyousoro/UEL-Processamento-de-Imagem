@@ -33,11 +33,6 @@ def equalize_histogram(img: np.ndarray) -> np.ndarray:
     return cv.equalizeHist(copy)
 
 
-def bilateral_filter(img: np.ndarray) -> np.ndarray:
-    copy = img.copy()
-    return cv.bilateralFilter(copy, 9, 75, 75)
-
-
 def sobel_filter(img: np.ndarray) -> np.ndarray:
     copy = img.copy()
     copy = cv.Sobel(copy, cv.CV_64F, 1, 1, ksize=3)

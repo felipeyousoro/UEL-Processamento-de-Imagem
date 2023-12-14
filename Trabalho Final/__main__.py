@@ -84,15 +84,13 @@ if __name__ == '__main__':
         for contour in selected_contours:
             contour_img = rectangular_contours_to_image(binarized_img, contour, binarized_img.shape[0],
                                                         binarized_img.shape[1])
-            #contour_img = watanimage.opening(contour_img)
             contour_img[contour_img == 1] = 255
             cropped_contours.append(contour_img)
 
         binarized_img[binarized_img == 1] = 255
         images.append(binarized_img)
 
-        # Aplica o Tessearct para detectar o texto
-
+        # Aplica o Tesseract para detectar o texto
         pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
         for cropped_contour in cropped_contours:
             # Motivo do PSM
