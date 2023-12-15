@@ -1,4 +1,3 @@
-import math as m
 import cv2 as cv
 import numpy as np
 import pytesseract as pytesseract
@@ -50,7 +49,18 @@ if __name__ == '__main__':
         gray_image = cv.imread(INPUT_FOLDER + '/img (' + str(i) + ').png', cv.IMREAD_GRAYSCALE)
 
         # Aplica o pré-processamento
+
+        # Queria deixar mencionado aqui que eu cheguei a fazer
+        # alguns testes aplicando a equalização de histograma
+        # mas não fez muita diferença (até piorou)
+
+        # Tira os ruídos da imagem, acaba ficando melhor de
+        # extrair contornos
         gaussian = watanimage.gaussian_blur(gray_image)
+
+        # Filtro de Sobel para destacar as bordas, esses valores
+        # da soma ponderada da imagem e das bordas foram escolhidos
+        # na base do teste e erro para o dataset que montei
         edge = watanimage.sobel_filter(gaussian)
         sobel = cv.addWeighted(gaussian, 0.7, edge, 0.3, 20)
         binarized_img = watanimage.binarize_image(sobel)
@@ -80,6 +90,9 @@ if __name__ == '__main__':
         final = mark_rectangular_contours(color_image, binarized_img, selected_contours)
         images.append(final)
 
+        # Isso aqui é para isolar os contornos da imagem
+        # e aplicar o Tesseract individualmente neles até
+        # achar o contorno correto (que no caso é a placa)
         cropped_contours = []
         for contour in selected_contours:
             contour_img = rectangular_contours_to_image(binarized_img, contour, binarized_img.shape[0],
@@ -97,7 +110,13 @@ if __name__ == '__main__':
             # https://stackoverflow.com/a/44632770
             text = pytesseract.image_to_string(cropped_contour, config='--psm 7')
             images.append(cropped_contour)
-            # Removendo espaços e caracteres especiais
+
+            # Aqui eu aplico um processamento de texto
+            # já que não faz sentido ter uma placa com
+            # poucos caracteres e muito menos com um apóstrofe
+            # Isso só é aplicado pois o Tesseract, por vezes,
+            # acaba alucinando em alguns contornos que não são
+            # placas
             text = ''.join(e for e in text if e.isalnum())
             if len(text) > 5:
                 print(text)
